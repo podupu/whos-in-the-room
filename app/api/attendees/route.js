@@ -46,6 +46,7 @@ export async function POST(req) {
     role: clean(r.role),
     looking: Array.isArray(r.looking) ? r.looking.slice(0, 2).map(clean) : [],
     offer: clean(r.offer),
+    feedback: clean(r.feedback),
     t: Date.now(),
   };
   if (redis) {

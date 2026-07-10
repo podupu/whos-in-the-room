@@ -49,14 +49,26 @@ function topMatches(me, all) {
 
 /* ————— UI bits ————— */
 function Sticker({ a, highlight, flag, onClick, selected }) {
+  const isInteractive = Boolean(onClick);
+  const Wrapper = isInteractive ? "button" : "div";
   return (
-    <div onClick={onClick} style={{
-      background: "#FFFDF6", borderRadius: 10, overflow: "hidden",
-      boxShadow: selected ? "0 0 0 3px #FFD23F, 0 6px 16px rgba(0,0,0,.35)" : "0 4px 12px rgba(0,0,0,.3)",
-      transform: `rotate(${(a.id.charCodeAt(0) % 3) - 1}deg)`,
-      cursor: onClick ? "pointer" : "default",
-      position: "relative",
-    }}>
+    <Wrapper
+      onClick={onClick}
+      type={isInteractive ? "button" : undefined}
+      aria-label={isInteractive ? `Select ${a.name}'s badge` : undefined}
+      style={{
+        width: "100%",
+        textAlign: "left",
+        border: "none",
+        padding: 0,
+        background: "#FFFDF6",
+        borderRadius: 10,
+        overflow: "hidden",
+        boxShadow: selected ? "0 0 0 3px #FFD23F, 0 6px 16px rgba(0,0,0,.35)" : "0 4px 12px rgba(0,0,0,.3)",
+        transform: `rotate(${(a.id.charCodeAt(0) % 3) - 1}deg)`,
+        cursor: onClick ? "pointer" : "default",
+        position: "relative",
+      }}>
       <div style={{ background: "#D62839", padding: "7px 12px 5px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <span style={{ fontFamily: "'Archivo Black'", color: "#FFFDF6", fontSize: 10, letterSpacing: 1.5 }}>HELLO I'M</span>
         <span style={{ fontFamily: "'Space Grotesk'", color: "rgba(255,253,246,.85)", fontSize: 10, fontWeight: 700 }}>{(a.role || "").toUpperCase()}</span>
@@ -88,13 +100,13 @@ function Sticker({ a, highlight, flag, onClick, selected }) {
           </a>
         )}
       </div>
-    </div>
+    </Wrapper>
   );
 }
 
 const inputStyle = {
   width: "100%", boxSizing: "border-box", background: "#FFFDF6", border: "none", borderRadius: 8,
-  padding: "12px 12px", fontFamily: "'Space Grotesk'", fontSize: 15, color: "#1A1A2B", outline: "none",
+  padding: "12px 12px", fontFamily: "'Space Grotesk'", fontSize: 15, color: "#1A1A2B",
 };
 const labelStyle = { fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: "#8B93B8", display: "block", marginBottom: 6, marginTop: 16 };
 
@@ -112,6 +124,7 @@ export default function App() {
   const [role, setRole] = useState("");
   const [looking, setLooking] = useState([]);
   const [offer, setOffer] = useState("");
+  const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -165,7 +178,7 @@ export default function App() {
       const res = await fetch("/api/attendees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event, record: { name: name.trim(), company: company.trim(), linkedin: linkedin.trim(), role, looking, offer: offer.trim() } }),
+        body: JSON.stringify({ event, record: { name: name.trim(), company: company.trim(), linkedin: linkedin.trim(), role, looking, offer: offer.trim(), feedback: feedback.trim() } }),
       });
       const data = await res.json();
       if (data.record) {
@@ -196,22 +209,22 @@ export default function App() {
   const matches = me ? topMatches(me, attendees) : [];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#1C2440", paddingBottom: 60, maxWidth: 520, margin: "0 auto" }}>
+    <main style={{ minHeight: "100vh", background: "#1C2440", paddingBottom: 60, maxWidth: 520, margin: "0 auto" }}>
       {/* header */}
       <div style={{ padding: "26px 18px 14px", textAlign: "center" }}>
-        <div style={{ fontFamily: "'Archivo Black'", color: "#FFFDF6", fontSize: 26, lineHeight: 1.05, letterSpacing: -0.5 }}>
+        <h1 style={{ fontFamily: "'Archivo Black'", color: "#FFFDF6", fontSize: 26, lineHeight: 1.05, letterSpacing: -0.5, margin: 0 }}>
           WHO'S IN<br />THE ROOM<span style={{ color: "#FFD23F" }}>?</span>
-        </div>
-        <div style={{ fontFamily: "'Space Grotesk'", color: "#8B93B8", fontSize: 13, marginTop: 8 }}>
+        </h1>
+        <div style={{ fontFamily: "'Space Grotesk'", color: "#8B93B8", fontSize: 13, marginTop: 8 }} aria-live="polite">
           {attendees.length === 0 ? "Check in to open the room" : `${attendees.length} ${attendees.length === 1 ? "person has" : "people have"} checked in`}
           {event !== "demo" && <span> · {event}</span>}
         </div>
       </div>
 
       {/* tabs */}
-      <div style={{ display: "flex", gap: 6, padding: "0 18px", marginBottom: 16 }}>
+      <div role="tablist" aria-label="Main sections" style={{ display: "flex", gap: 6, padding: "0 18px", marginBottom: 16 }}>
         {[["checkin", "Check in"], ["room", `Room (${attendees.length})`], ["matches", "My 3 people"]].map(([k, label]) => (
-          <button key={k} onClick={() => { setTab(k); if (k !== "checkin") refresh(); }} style={{
+          <button key={k} type="button" role="tab" id={`tab-${k}`} aria-selected={tab === k} aria-controls={`panel-${k}`} onClick={() => { setTab(k); if (k !== "checkin") refresh(); }} style={{
             flex: 1, padding: "10px 4px", borderRadius: 8, border: "none", cursor: "pointer",
             fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13,
             background: tab === k ? "#FFD23F" : "rgba(255,253,246,.08)",
@@ -222,7 +235,7 @@ export default function App() {
 
       {/* CHECK IN */}
       {tab === "checkin" && (
-        <div style={{ padding: "0 18px" }}>
+        <div role="tabpanel" id="panel-checkin" aria-labelledby="tab-checkin" style={{ padding: "0 18px" }}>
           {myId && me ? (
             <div style={{ background: "rgba(255,253,246,.06)", borderRadius: 12, padding: 18, textAlign: "center" }}>
               <div style={{ fontFamily: "'Archivo Black'", color: "#FFD23F", fontSize: 16 }}>YOU'RE ON THE BOARD ✓</div>
@@ -239,14 +252,14 @@ export default function App() {
                 Your badge is visible to everyone at this event — share only what you're happy for the room to see.
               </div>
 
-              <label style={labelStyle}>NAME *</label>
-              <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Alex Chen" />
+              <label htmlFor="name" style={labelStyle}>NAME *</label>
+              <input id="name" style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Alex Chen" required autoComplete="name" />
 
-              <label style={labelStyle}>COMPANY</label>
-              <input style={inputStyle} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Labs" />
+              <label htmlFor="company" style={labelStyle}>COMPANY</label>
+              <input id="company" style={inputStyle} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Labs" autoComplete="organization" />
 
-              <label style={labelStyle}>LINKEDIN URL</label>
-              <input style={inputStyle} value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="linkedin.com/in/yourname" />
+              <label htmlFor="linkedin" style={labelStyle}>LINKEDIN URL</label>
+              <input id="linkedin" style={inputStyle} value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="linkedin.com/in/yourname" autoComplete="url" />
               <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11.5, color: "#8B93B8", marginTop: 5 }}>
                 LinkedIn app → your photo → ⋯ → Share profile → Copy link
               </div>
@@ -254,7 +267,7 @@ export default function App() {
               <label style={labelStyle}>YOUR ROLE *</label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {ROLES.map((r) => (
-                  <button key={r} onClick={() => setRole(r)} style={{
+                  <button key={r} type="button" aria-pressed={role === r} onClick={() => setRole(r)} style={{
                     padding: "8px 12px", borderRadius: 999, cursor: "pointer", fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 600,
                     border: role === r ? "2px solid #FFD23F" : "1.5px solid rgba(255,253,246,.25)",
                     background: role === r ? "#FFD23F" : "transparent",
@@ -266,7 +279,7 @@ export default function App() {
               <label style={labelStyle}>LOOKING FOR TONIGHT (PICK UP TO 2)</label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {LOOKING.map((l) => (
-                  <button key={l} onClick={() => toggleLooking(l)} style={{
+                  <button key={l} type="button" aria-pressed={looking.includes(l)} onClick={() => toggleLooking(l)} style={{
                     padding: "8px 12px", borderRadius: 999, cursor: "pointer", fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 600,
                     border: looking.includes(l) ? "2px solid #D62839" : "1.5px solid rgba(255,253,246,.25)",
                     background: looking.includes(l) ? "#D62839" : "transparent",
@@ -275,12 +288,24 @@ export default function App() {
                 ))}
               </div>
 
-              <label style={labelStyle}>WHAT CAN YOU OFFER OR TALK ABOUT?</label>
-              <input style={inputStyle} value={offer} onChange={(e) => setOffer(e.target.value)} placeholder="e.g. 10 yrs fintech PM · raising pre-seed · hiring 2 engineers" />
+              <label htmlFor="offer" style={labelStyle}>WHAT CAN YOU OFFER OR TALK ABOUT?</label>
+              <input id="offer" style={inputStyle} value={offer} onChange={(e) => setOffer(e.target.value)} placeholder="e.g. 10 yrs fintech PM · raising pre-seed · hiring 2 engineers" />
 
-              {err && <div style={{ fontFamily: "'Space Grotesk'", color: "#FF8A8A", fontSize: 13, marginTop: 12, fontWeight: 600 }}>{err}</div>}
+              <label htmlFor="feedback" style={labelStyle}>ANY FEEDBACK FOR THE ORGANIZER? (OPTIONAL)</label>
+              <textarea
+                id="feedback"
+                style={{ ...inputStyle, minHeight: 90, resize: "vertical", lineHeight: 1.35 }}
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="What worked well, what to improve, or what you want next time"
+              />
+              <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11.5, color: "#8B93B8", marginTop: 5 }}>
+                This is for organizer insights only and is not shown on your badge.
+              </div>
 
-              <button onClick={checkIn} disabled={saving} style={{
+              {err && <div role="alert" style={{ fontFamily: "'Space Grotesk'", color: "#FF8A8A", fontSize: 13, marginTop: 12, fontWeight: 600 }}>{err}</div>}
+
+              <button type="button" onClick={checkIn} disabled={saving} aria-busy={saving} style={{
                 width: "100%", marginTop: 20, padding: "15px", borderRadius: 10, border: "none", cursor: "pointer",
                 background: "#FFD23F", color: "#1A1A2B", fontFamily: "'Archivo Black'", fontSize: 15, letterSpacing: 1,
                 opacity: saving ? 0.6 : 1,
@@ -292,10 +317,10 @@ export default function App() {
 
       {/* ROOM */}
       {tab === "room" && (
-        <div style={{ padding: "0 18px" }}>
+        <div role="tabpanel" id="panel-room" aria-labelledby="tab-room" style={{ padding: "0 18px" }}>
           <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 10, WebkitOverflowScrolling: "touch" }}>
             {["All", ...ROLES.filter((r) => roleCounts[r])].map((r) => (
-              <button key={r} onClick={() => setRoleFilter(r)} style={{
+              <button key={r} type="button" aria-pressed={roleFilter === r} onClick={() => setRoleFilter(r)} style={{
                 whiteSpace: "nowrap", padding: "7px 12px", borderRadius: 999, cursor: "pointer",
                 fontFamily: "'Space Grotesk'", fontSize: 12.5, fontWeight: 700, border: "none",
                 background: roleFilter === r ? "#FFD23F" : "rgba(255,253,246,.1)",
@@ -305,7 +330,7 @@ export default function App() {
           </div>
 
           {loading && attendees.length === 0 && (
-            <div style={{ fontFamily: "'Space Grotesk'", color: "#8B93B8", textAlign: "center", padding: 40 }}>Opening the room…</div>
+            <div aria-live="polite" style={{ fontFamily: "'Space Grotesk'", color: "#8B93B8", textAlign: "center", padding: 40 }}>Opening the room…</div>
           )}
           {!loading && attendees.length === 0 && (
             <div style={{ textAlign: "center", padding: "40px 20px" }}>
@@ -320,7 +345,7 @@ export default function App() {
             ))}
           </div>
 
-          <button onClick={refresh} style={{ width: "100%", marginTop: 18, padding: 12, borderRadius: 8, border: "1.5px solid rgba(255,253,246,.25)", background: "transparent", color: "#C9CEE4", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+          <button type="button" onClick={refresh} style={{ width: "100%", marginTop: 18, padding: 12, borderRadius: 8, border: "1.5px solid rgba(255,253,246,.25)", background: "transparent", color: "#C9CEE4", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
             ↻ Refresh — see who just walked in
           </button>
         </div>
@@ -328,7 +353,7 @@ export default function App() {
 
       {/* MATCHES */}
       {tab === "matches" && (
-        <div style={{ padding: "0 18px" }}>
+        <div role="tabpanel" id="panel-matches" aria-labelledby="tab-matches" style={{ padding: "0 18px" }}>
           {!me && (
             <div>
               <div style={{ fontFamily: "'Space Grotesk'", color: "#C9CEE4", fontSize: 14, lineHeight: 1.45, marginBottom: 14 }}>
@@ -348,7 +373,7 @@ export default function App() {
               </div>
               <div style={{ fontFamily: "'Space Grotesk'", color: "#8B93B8", fontSize: 12.5, marginBottom: 16 }}>
                 Ranked for what you said you're looking for{(me.looking || []).length ? `: ${me.looking.join(" + ").toLowerCase()}` : ""}.
-                <button onClick={() => rememberMe(null)} style={{ background: "none", border: "none", color: "#FFD23F", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 12.5, cursor: "pointer", padding: 0, marginLeft: 6 }}>Not you?</button>
+                <button type="button" onClick={() => rememberMe(null)} style={{ background: "none", border: "none", color: "#FFD23F", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 12.5, cursor: "pointer", padding: 0, marginLeft: 6 }}>Not you?</button>
               </div>
               {matches.length === 0 && (
                 <div style={{ fontFamily: "'Space Grotesk'", color: "#8B93B8", textAlign: "center", padding: 30 }}>
@@ -369,6 +394,6 @@ export default function App() {
           )}
         </div>
       )}
-    </div>
+    </main>
   );
 }

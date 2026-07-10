@@ -68,6 +68,7 @@ function Sticker({ a, highlight, flag, onClick, selected }) {
       )}
       <div style={{ padding: "10px 12px 12px" }}>
         <div style={{ fontFamily: "'Caveat', cursive", fontSize: 28, lineHeight: 1, color: "#1A1A2B", fontWeight: 600 }}>{a.name}</div>
+        {a.company && <div style={{ fontFamily: "'Space Grotesk'", fontSize: 12, color: "#5B607A", marginTop: 4, fontWeight: 700 }}>{a.company}</div>}
         {a.offer && <div style={{ fontFamily: "'Space Grotesk'", fontSize: 13, color: "#3A3A4E", marginTop: 6, lineHeight: 1.35 }}>{a.offer}</div>}
         {(a.looking || []).length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
@@ -106,6 +107,7 @@ export default function App() {
   const [myId, setMyId] = useState(null);
 
   const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [role, setRole] = useState("");
   const [looking, setLooking] = useState([]);
@@ -163,7 +165,7 @@ export default function App() {
       const res = await fetch("/api/attendees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event, record: { name: name.trim(), linkedin: linkedin.trim(), role, looking, offer: offer.trim() } }),
+        body: JSON.stringify({ event, record: { name: name.trim(), company: company.trim(), linkedin: linkedin.trim(), role, looking, offer: offer.trim() } }),
       });
       const data = await res.json();
       if (data.record) {
@@ -239,6 +241,9 @@ export default function App() {
 
               <label style={labelStyle}>NAME *</label>
               <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Alex Chen" />
+
+              <label style={labelStyle}>COMPANY</label>
+              <input style={inputStyle} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Labs" />
 
               <label style={labelStyle}>LINKEDIN URL</label>
               <input style={inputStyle} value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="linkedin.com/in/yourname" />

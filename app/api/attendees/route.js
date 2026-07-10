@@ -41,6 +41,7 @@ export async function POST(req) {
   const record = {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
     name: clean(r.name),
+    company: clean(r.company),
     linkedin: clean(r.linkedin),
     role: clean(r.role),
     looking: Array.isArray(r.looking) ? r.looking.slice(0, 2).map(clean) : [],
